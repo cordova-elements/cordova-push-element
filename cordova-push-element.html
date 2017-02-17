@@ -70,7 +70,7 @@ Example:
          *
          * @type {{name: string, image: string}}
          */
-        author: {
+        options: {
           type: Object,
           // Use `value` to provide a default value for a property, by setting it
           // on your element's prototype.
@@ -93,12 +93,38 @@ Example:
       // Element Lifecycle
 
       ready: function() {
+        var self = this;
+        if (!window.PushNotification){
+            throw new Error('cordova-push-element: Either phonegap-plugin-push is not installed or cordova.js is not included!')
+        }
+
+        this._push = PushNotification.init(this.options)
+
+        this._push.on('registration', function (data){
+          this.fire('registration', data)
+        })
+
+        this._push.on('notification', function (data){
+          this.fire('notification', data)
+        })
+
+        this._push.on('error', function (data){
+          this.fire('error', data)
+        })
         // `ready` is called after all elements have been configured, but
         // propagates bottom-up. This element's children are ready, but parents
         // are not.
         //
         // This is the point where you should make modifications to the DOM (when
         // necessary), or kick off any processes the element wants to perform.
+      },
+
+      unregister: function (errorCallback, successCallback){
+        if (!this._push){
+          throw new Error('cordova-push-element: You need to register first!')
+        }
+
+        this._push.unregister (errorCallback, successCallback)
       },
 
       attached: function() {
@@ -131,21 +157,25 @@ Example:
       },
 
       /**
-       * The `cordova-push-element-lasers` event is fired whenever `fireLasers` is called.
        *
-       * @event cordova-push-element-lasers
-       * @detail {{sound: String}}
+       * @event registration
+       * @param {String} android.senderID Unique Identification of the gcm server.
+       * @param {String} android.icon Unique Identification of the gcm server.
+       * @param {String} android.iconColor Unique Identification of the gcm server.
+       * @param {Boolean} android.sound Unique Identification of the gcm server.
+       *
        */
 
       /**
-       * Attempt to destroy this element's enemies with a beam of light!
+       * @event notification
        *
-       * Or, at least, dispatch an event in the vain hope that someone else will
-       * do the zapping.
+       *
        */
-      fireLasers: function() {
-        this.fire('cordova-push-element-lasers', {sound: 'Pew pew!'});
-      }
+
+      /**
+       * @event error
+       */
+
     });
   </script>
 </dom-module>
